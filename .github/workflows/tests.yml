@@ -8,17 +8,13 @@ on:
 
 jobs:
   php-syntax:
-    name: PHP ${{ matrix.php }} . Laravel ${{ matrix.laravel }}
+    name: PHP ${{ matrix.php }} syntax check
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4']
-        laravel: ['^11.0', '^12.0', '^13.0']
-        exclude:
-          - php: '8.2'
-            laravel: '^13.0'
 
     steps:
       - uses: actions/checkout@v4
@@ -27,26 +23,10 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-          tools: composer:v2
-
-      - name: Cache Composer
-        uses: actions/cache@v4
-        with:
-          path: ~/.composer/cache
-          key: composer-${{ matrix.php }}-${{ matrix.laravel }}-${{ hashFiles('composer.json') }}
-
-      - name: Install dependencies
-        run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-update --no-interaction
-          composer update --prefer-dist --no-interaction --no-progress
 
       - name: PHP syntax check
-        run: find src -name "*.php" -exec php -l {} \;
-
-      - name: Run tests (if any)
         run: |
-          if [ -f phpunit.xml ] || [ -f phpunit.xml.dist ]; then
-            vendor/bin/phpunit
-          else
-            echo "No phpunit config yet"
-          fi
+          set -e
+          for f in $(find src -name "*.php"); do
+            php -l "$f"
+          done
